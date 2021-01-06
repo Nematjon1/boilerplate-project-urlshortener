@@ -34,7 +34,13 @@ const urlSchema = new mongoose.Schema({
 });
 
 const Url = mongoose.model("Url", urlSchema);
-let shortUrl = Math.max(Url.find(["shortUrl"])) + 1;
+let shortUrl;
+Url.find({}, (err, data) => {
+  if(err) res.json({"error": "invalid url"});
+  else {
+  shortUrl = Math.max(...data.map(i => i.shortUrl)) + 1;
+  }
+})
 
 app.get("/api/shorturl/:url", (req, res) => {
   const url = Number(req.params.url);
@@ -46,7 +52,7 @@ app.get("/api/shorturl/:url", (req, res) => {
         res.json({"error": "invalid url"})
       } else {
         console.log(err, data);
-        res.redirect(data.url)
+        res.redirect(data[0].url)
       }
     });
   }
@@ -59,8 +65,7 @@ app.post("/api/shorturl/new", (req, res) => {
     res.json({"error": 'invalid url'});
   }
 
-  dns.lookup(u[1].replace(/\//g, ""), (err, address, family) => {
-    console.log("Post: ",u, err, address);
+  dns.lookup(u[1].replace(/\//g, " ").split(" ")[2], (err, address, family) => {
     if(err) {
       return res.json({"error": 'invalid url'})
     } else {
